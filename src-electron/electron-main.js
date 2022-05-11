@@ -68,16 +68,16 @@ app.on("activate", () => {
 });
 
 ipcMain.handle("myAPI:api-play", (event, data) => {
-  const infoPath =
+  /*const infoPath =
     process.env.NODE_ENV === "development"
       ? "http://localhost:9080/#/info"
-      : `file://${__dirname}/index.html#info`;
+      : `file://${__dirname}/index.html#info`;*/
   infoWindow = new BrowserWindow({
     x: data.x,
     y: data.y,
     webPreferences: { webSecurity: false },
     autoHideMenuBar: true,
-    //fullscreen: true,
+    fullscreen: true,
   });
   infoWindow.on("close", function () {
     infoWindow = null;
@@ -105,14 +105,14 @@ ipcMain.handle("myAPI:api-stop", () => {
   };
 });
 
-ipcMain.handle("myAPI:open-image", () => {
+/*ipcMain.handle("myAPI:open-image", () => {
   const { dialog } = require('electron')
   let file = dialog.showOpenDialogSync({ properties: ['openFile'] });
   console.log(file[0])
   return {
     file: file[0],
   }
-});
+});*/
 
 ipcMain.handle("myAPI:get-screens", () => {
   return {

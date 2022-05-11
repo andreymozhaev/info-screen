@@ -52,7 +52,7 @@ import { onMounted, ref } from "vue";
 import { useSettingsStore } from "src/stores/settings";
 import { storeToRefs } from "pinia";
 import { defineComponent } from "vue";
-import { LocalStorage } from "quasar";
+//import { LocalStorage } from "quasar";
 export default defineComponent({
   name: "InfoPage",
 
