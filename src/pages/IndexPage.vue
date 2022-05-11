@@ -1,16 +1,7 @@
 <template>
   <q-header elevated>
     <q-toolbar>
-      <q-btn
-        flat
-        dense
-        round
-        icon="menu"
-        aria-label="Menu"
-        @click="toggleLeftDrawer"
-      />
-
-      <q-toolbar-title> Quasar App </q-toolbar-title>
+      <q-toolbar-title> Информационный экран </q-toolbar-title>
 
       <q-btn-dropdown stretch flat label="Экран">
         <q-list>
@@ -70,8 +61,9 @@
       narrow-indicator
     >
       <q-tab name="marquee" label="Бегущая строка" />
-      <q-tab name="alarms" label="Alarms" />
-      <q-tab name="movies" label="Movies" />
+      <!--q-tab name="logo" label="Логотип" /-->
+      <q-tab name="news" label="Новости" />
+      <q-tab name="slides" label="Слайды" />
     </q-tabs>
 
     <q-separator />
@@ -79,10 +71,7 @@
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="marquee" class="q-gutter-md">
         <div class="text-h6">{{ marquee.text }}</div>
-        <q-input
-          label="Текст бегущей строки"
-          v-model="marquee.text"
-        ></q-input>
+        <q-input label="Текст бегущей строки" v-model="marquee.text"></q-input>
         <q-input
           label="Длительность, с"
           type="number"
@@ -96,14 +85,67 @@
         <q-btn @click="saveMarquee">Сохранить</q-btn>
       </q-tab-panel>
 
-      <q-tab-panel name="alarms">
-        <div class="text-h6">Alarms</div>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+      <!--q-tab-panel name="logo">
+        <div class="text-h6">Логотип</div>
+        <q-file color="purple-12"  label="Label" @change="loadImage()">
+          <template v-slot:prepend>
+            <q-icon name="attach_file" />
+          </template>
+        </q-file>
+        <q-btn @click="openImage()">Open</q-btn>
+        <q-img
+          :src="logo.imageUrl"
+          spinner-color="white"
+          style="height: 140px; max-width: 150px"
+        />
+      </q-tab-panel-->
+
+      <q-tab-panel name="news" class="q-gutter-md">
+        <div class="text-h6">Новости</div>
+        <q-card v-for="(item, index) in news" :key="index">
+          <q-card-section>
+            <div class="text-h6">{{ item.title }}</div>
+            <div>{{ item.body }}</div>
+          </q-card-section>
+          <q-card-section>
+            <q-btn @click="deleteOneNews(index)">Удалить</q-btn>
+          </q-card-section>
+        </q-card>
+        <q-card>
+          <q-card-section>
+            <q-input label="Заголовок" v-model="oneNews.title"></q-input>
+            <q-input label="Текст" v-model="oneNews.body"></q-input>
+          </q-card-section>
+          <q-card-section>
+            <q-btn @click="addNews()">Добавить</q-btn>
+          </q-card-section>
+        </q-card>
       </q-tab-panel>
 
-      <q-tab-panel name="movies">
-        <div class="text-h6">Movies</div>
-        Lorem ipsum dolor sit amet consectetur adipisicing elit.
+      <q-tab-panel name="slides">
+        <div class="text-h6">Слайды</div>
+        <div class="q-pa-md row items-start q-gutter-md">
+          <q-card class="my-card" v-for="(item, index) in slides" :key="index">
+            <q-img :src="item.url">
+              <div class="absolute-bottom">
+                <div class="text-h6">{{ item.title }}</div>
+              </div>
+            </q-img>
+
+            <q-card-actions>
+              <q-btn flat @click="deleteSlide(index)">Удалить</q-btn>
+            </q-card-actions>
+          </q-card>
+        </div>
+        <q-card>
+          <q-card-section>
+            <q-input label="Заголовок" v-model="slide.title"></q-input>
+            <q-input label="Ссылка на изображение" v-model="slide.url"></q-input>
+          </q-card-section>
+          <q-card-section>
+            <q-btn @click="addSlide()">Добавить</q-btn>
+          </q-card-section>
+        </q-card>
       </q-tab-panel>
     </q-tab-panels>
   </q-card>
@@ -120,7 +162,7 @@ import { defineComponent, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { usePlayStore } from "src/stores/play";
 import { useSettingsStore } from "src/stores/settings";
-import { LocalStorage } from "quasar";
+//import { LocalStorage } from "quasar";
 
 export default defineComponent({
   name: "IndexPage",
@@ -128,11 +170,12 @@ export default defineComponent({
   setup() {
     const playStore = usePlayStore();
     const settingsStore = useSettingsStore();
-    const { marquee } = storeToRefs(settingsStore);
-    const leftDrawerOpen = ref(false);
+    const { marquee, news, slides } = storeToRefs(settingsStore);
     const screens = ref([]);
     const selectedScreen = ref({});
-    const tab = ref("mails");
+    const tab = ref("marquee");
+    const oneNews = ref({});
+    const slide = ref({});
 
     const getScreens = async () => {
       let response = await window.myAPI.getScreens();
@@ -143,19 +186,21 @@ export default defineComponent({
     onMounted(getScreens);
 
     return {
-      leftDrawerOpen,
       screens,
       getScreens,
       selectedScreen,
       tab,
       playStore,
       marquee,
-      toggleLeftDrawer() {
-        leftDrawerOpen.value = !leftDrawerOpen.value;
-      },
+      news,
+      oneNews,
+      slides,
+      slide,
+
       selectScreen(item) {
         selectedScreen.value = item;
       },
+
       async play() {
         const position = {
           x: selectedScreen.value.bounds.x,
@@ -167,14 +212,61 @@ export default defineComponent({
       },
       async stop() {
         let response = await window.myAPI.stop();
+        console.log(response.message);
         playStore.stop();
       },
 
-      saveMarquee(){
+      saveMarquee() {
         settingsStore.setMarquee(marquee.value);
-        console.log(LocalStorage.getItem('marquee'));
-      }
+      },
+
+      addNews() {
+        news.value.push({
+          title: oneNews.value.title,
+          body: oneNews.value.body,
+        });
+        oneNews.value = {};
+        settingsStore.setNews(news.value);
+      },
+
+      deleteOneNews(index) {
+        news.value.splice(index, 1);
+        settingsStore.setNews(news.value);
+      },
+
+      addSlide() {
+        slides.value.push({
+          title: slide.value.title,
+          url: slide.value.url,
+        });
+        slide.value = {};
+        settingsStore.setSlides(slides.value);
+      },
+
+      deleteSlide(index) {
+        slides.value.splice(index, 1);
+        settingsStore.setSlides(slides.value);
+      },
+
+      /*async openImage() {
+        console.log("load Image");
+        logo.value.imageUrl = URL.createObjectURL(logo.value.image);
+        settingsStore.setLogo(logo.value);
+      },
+
+      loadImage() {
+        console.log("load Image");
+        logo.value.imageUrl = URL.createObjectURL(logo.value.image);
+        settingsStore.setLogo(logo.value);
+      },*/
     };
   },
 });
 </script>
+
+<style scoped>
+.my-card {
+  width: 100%;
+  max-width: 250px;
+}
+</style>

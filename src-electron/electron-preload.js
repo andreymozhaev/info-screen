@@ -31,5 +31,11 @@ contextBridge.exposeInMainWorld('myAPI', {
   getScreens: () => {
     let screens = ipcRenderer.invoke('myAPI:get-screens');
     return screens;
+  },
+
+  openImage: () => {
+    let image = ipcRenderer.invoke('myAPI:open-image');
+    console.log(image);
+    return image;
   }
 })

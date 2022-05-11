@@ -105,6 +105,15 @@ ipcMain.handle("myAPI:api-stop", () => {
   };
 });
 
+ipcMain.handle("myAPI:open-image", () => {
+  const { dialog } = require('electron')
+  let file = dialog.showOpenDialogSync({ properties: ['openFile'] });
+  console.log(file[0])
+  return {
+    file: file[0],
+  }
+});
+
 ipcMain.handle("myAPI:get-screens", () => {
   return {
     screens: screen.getAllDisplays(),
