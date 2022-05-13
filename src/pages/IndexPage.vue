@@ -60,15 +60,64 @@
       align="justify"
       narrow-indicator
     >
+      <q-tab name="settings" label="Настройки" />
       <q-tab name="marquee" label="Бегущая строка" />
-      <!--q-tab name="logo" label="Логотип" /-->
       <q-tab name="news" label="Новости" />
-      <q-tab name="slides" label="Слайды" />
+      <q-tab name="slides" label="Слайды" v-if="centerMode == 'slides'" />
+      <q-tab name="video" label="Видео" v-if="centerMode == 'video'" />
     </q-tabs>
 
     <q-separator />
-
+    <!--Настройки-->
     <q-tab-panels v-model="tab" animated>
+      <q-tab-panel name="settings" class="q-gutter-md">
+        <div class="text-h6">Настройки</div>
+        <div class="row q-gutter-md">
+          <!--Логотип-->
+          <q-card class="my-card">
+            <q-card-section>
+              <div class="text-h6">Логотип</div>
+            </q-card-section>
+            <q-card-section>
+              <q-img :src="logo"></q-img>
+            </q-card-section>
+            <q-card-section>
+              <q-btn @click="selectLogo()">Изменить</q-btn>
+            </q-card-section>
+          </q-card>
+          <!--Центральная часть-->
+          <q-card class="my-card">
+            <q-card-section>
+              <div class="text-h6">Центральная часть</div>
+            </q-card-section>
+            <q-card-section>
+              <q-btn-toggle
+                v-model="centerMode"
+                toggle-color="primary"
+                :options="[
+                  { label: 'Слайды', value: 'slides' },
+                  { label: 'Видео', value: 'video' },
+                ]"
+                @update:model-value="setCenterMode()"
+              />
+            </q-card-section>
+          </q-card>
+          <!--Цвет-->
+          <q-card class="my-card">
+            <q-card-section>
+              <div class="text-h6">Цвет фона</div>
+              <q-color class="my-picker" v-model="color.back" @update:model-value="setColor()"/>
+            </q-card-section>
+          </q-card>
+          <q-card class="my-card">
+            <q-card-section>
+              <div class="text-h6">Цвет текста</div>
+              <q-color class="my-picker" v-model="color.text" @update:model-value="setColor()"/>
+            </q-card-section>
+          </q-card>
+        </div>
+      </q-tab-panel>
+
       <q-tab-panel name="marquee" class="q-gutter-md">
         <div class="text-h6">{{ marquee.text }}</div>
         <q-input label="Текст бегущей строки" v-model="marquee.text"></q-input>
@@ -84,21 +133,6 @@
         ></q-input>
         <q-btn @click="saveMarquee">Сохранить</q-btn>
       </q-tab-panel>
-
-      <!--q-tab-panel name="logo">
-        <div class="text-h6">Логотип</div>
-        <q-file color="purple-12"  label="Label" @change="loadImage()">
-          <template v-slot:prepend>
-            <q-icon name="attach_file" />
-          </template>
-        </q-file>
-        <q-btn @click="openImage()">Open</q-btn>
-        <q-img
-          :src="logo.imageUrl"
-          spinner-color="white"
-          style="height: 140px; max-width: 150px"
-        />
-      </q-tab-panel-->
 
       <q-tab-panel name="news" class="q-gutter-md">
         <div class="text-h6">Новости</div>
@@ -122,7 +156,7 @@
         </q-card>
       </q-tab-panel>
 
-      <q-tab-panel name="slides">
+      <q-tab-panel name="slides" v-if="centerMode == 'slides'">
         <div class="text-h6">Слайды</div>
         <div class="q-pa-md row items-start q-gutter-md">
           <q-card class="my-card" v-for="(item, index) in slides" :key="index">
@@ -140,10 +174,27 @@
         <q-card>
           <q-card-section>
             <q-input label="Заголовок" v-model="slide.title"></q-input>
-            <q-input label="Ссылка на изображение" v-model="slide.url"></q-input>
+            <q-input
+              label="Ссылка на изображение"
+              v-model="slide.url"
+            ></q-input>
           </q-card-section>
-          <q-card-section>
+          <q-card-section class="q-gutter-md">
             <q-btn @click="addSlide()">Добавить</q-btn>
+            <q-btn @click="loadImage()">Загрузить</q-btn>
+          </q-card-section>
+        </q-card>
+      </q-tab-panel>
+
+      <q-tab-panel name="video" v-if="centerMode == 'video'">
+        <div class="text-h6">Видео</div>
+        <q-card>
+          <q-card-section>
+            <q-input label="Ссылка на видео" v-model="video"></q-input>
+          </q-card-section>
+          <q-card-section class="q-gutter-md">
+            <q-btn @click="loadVideo()">Загрузить</q-btn>
+            <q-btn @click="saveVideo()">Сохранить</q-btn>
           </q-card-section>
         </q-card>
       </q-tab-panel>
@@ -170,7 +221,8 @@ export default defineComponent({
   setup() {
     const playStore = usePlayStore();
     const settingsStore = useSettingsStore();
-    const { marquee, news, slides } = storeToRefs(settingsStore);
+    const { marquee, news, slides, logo, centerMode, video, color } =
+      storeToRefs(settingsStore);
     const screens = ref([]);
     const selectedScreen = ref({});
     const tab = ref("marquee");
@@ -196,6 +248,10 @@ export default defineComponent({
       oneNews,
       slides,
       slide,
+      logo,
+      centerMode,
+      video,
+      color,
 
       selectScreen(item) {
         selectedScreen.value = item;
@@ -248,6 +304,37 @@ export default defineComponent({
         settingsStore.setSlides(slides.value);
       },
 
+      async selectLogo() {
+        let response = await window.myAPI.openImage();
+        //let urll = url.pathToFileURL(response.file);
+        //console.log(urll);
+        console.log(response.url);
+        logo.value = response.url;
+        settingsStore.setLogo(logo.value);
+      },
+
+      async loadImage() {
+        let response = await window.myAPI.openImage();
+        slide.value.url = response.url;
+      },
+
+      async loadVideo() {
+        let response = await window.myAPI.openVideo();
+        video.value = response.url;
+      },
+
+      saveVideo() {
+        settingsStore.setVideo(video.value);
+      },
+
+      setCenterMode() {
+        settingsStore.setCenterMode(centerMode.value);
+      },
+
+      setColor(){
+        settingsStore.setColor(color.value);
+      }
+
       /*async openImage() {
         console.log("load Image");
         logo.value.imageUrl = URL.createObjectURL(logo.value.image);
@@ -267,6 +354,10 @@ export default defineComponent({
 <style scoped>
 .my-card {
   width: 100%;
+  max-width: 250px;
+}
+
+.my-picker{
   max-width: 250px;
 }
 </style>

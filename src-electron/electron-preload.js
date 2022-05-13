@@ -33,9 +33,13 @@ contextBridge.exposeInMainWorld('myAPI', {
     return screens;
   },
 
-  /*openImage: () => {
-    let image = ipcRenderer.invoke('myAPI:open-image');
-    console.log(image);
-    return image;
-  }*/
+  openImage: () => {
+    let url = ipcRenderer.invoke('myAPI:open-image');
+    return url;
+  },
+
+  openVideo: () => {
+    let url = ipcRenderer.invoke('myAPI:open-video');
+    return url;
+  }
 })

@@ -1,5 +1,5 @@
 <template>
-  <div class="info fullscreen column">
+  <div class="info fullscreen column" :style="{backgroundColor: color.back, color: color.text}">
     <div class="col marquee column justify-center">
       <p
         :style="{
@@ -19,8 +19,15 @@
           </q-card-section>
         </q-card>
       </div>
-      <div class="col-7 q-pa-md">
-        <q-carousel autoplay="true" infinite animated v-model="slide" class="full-height">
+      <div class="col-7 q-pa-md column justify-center">
+        <q-carousel
+          autoplay="true"
+          infinite
+          animated
+          v-model="slide"
+          class="full-height"
+          v-if="centerMode=='slides'"
+        >
           <q-carousel-slide
             v-for="(item, index) in slides"
             :key="index"
@@ -32,16 +39,23 @@
             </div>
           </q-carousel-slide>
         </q-carousel>
+        <q-video v-if="centerMode=='video'" :src="video" :ratio="16/9"></q-video>
       </div>
       <div class="col-2 column q-pa-md">
         <div class="col">
-          <div class="text-h2 text-center">{{ datetime.day }}.{{ datetime.month }}.{{ datetime.year }}</div>
+          <q-img :src="logo" fit="contain" height="100%"></q-img>
+        </div>
+        <div class="col column justify-center">
+          <div class="text-h2 text-center">
+            {{ datetime.hours }}.{{ datetime.minutes }}.{{ datetime.seconds }}
+          </div>
+        </div>
+        <div class="col column justify-center">
+          <div class="text-h2 text-center">
+            {{ datetime.day }}.{{ datetime.month }}.{{ datetime.year }}
+          </div>
           <div class="text-h3 text-center">{{ datetime.dayOfWeek }}</div>
         </div>
-        <div class="col">
-          <div class="text-h2 text-center">{{ datetime.hours }}.{{ datetime.minutes }}.{{ datetime.seconds }}</div>
-        </div>
-        <div class="col"></div>
       </div>
     </div>
   </div>
@@ -58,25 +72,40 @@ export default defineComponent({
 
   setup() {
     const settingsStore = useSettingsStore();
-    const { marquee, news, slides } = storeToRefs(settingsStore);
+    const { marquee, news, slides, logo, video, centerMode, color } = storeToRefs(settingsStore);
     const slide = ref(0);
     const datetime = ref({});
-    const days = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота']
+    const days = [
+      "Воскресенье",
+      "Понедельник",
+      "Вторник",
+      "Среда",
+      "Четверг",
+      "Пятница",
+      "Суббота",
+    ];
 
     const getTime = () => {
       let date = new Date();
       datetime.value.year = date.getFullYear();
-      datetime.value.month = (date.getMonth() + 1 > 9)?date.getMonth() + 1:'0' + (date.getMonth() + 1);
-      datetime.value.day = (date.getDate() > 9)?date.getDate():'0' + date.getDate();
+      datetime.value.month =
+        date.getMonth() + 1 > 9
+          ? date.getMonth() + 1
+          : "0" + (date.getMonth() + 1);
+      datetime.value.day =
+        date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
       datetime.value.dayOfWeek = days[date.getDay()];
-      datetime.value.hours = (date.getHours() > 9)?date.getHours():'0' + date.getHours();
-      datetime.value.minutes = (date.getMinutes() > 9)?date.getMinutes():'0' + date.getMinutes();
-      datetime.value.seconds = (date.getSeconds() > 9)?date.getSeconds():'0' + date.getSeconds();
-    }
+      datetime.value.hours =
+        date.getHours() > 9 ? date.getHours() : "0" + date.getHours();
+      datetime.value.minutes =
+        date.getMinutes() > 9 ? date.getMinutes() : "0" + date.getMinutes();
+      datetime.value.seconds =
+        date.getSeconds() > 9 ? date.getSeconds() : "0" + date.getSeconds();
+    };
 
     const updateTime = () => {
       setInterval(getTime, 1000);
-    }
+    };
 
     onMounted(updateTime);
 
@@ -86,9 +115,13 @@ export default defineComponent({
       slides,
       slide,
       datetime,
+      logo,
+      video,
+      centerMode,
+      color,
 
       getTime,
-      updateTime
+      updateTime,
     };
   },
 });

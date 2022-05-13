@@ -3,12 +3,13 @@ import { LocalStorage } from "quasar";
 
 export const useSettingsStore = defineStore("settings", {
   state: () => ({
-    marquee: LocalStorage.getItem("marquee")
-      ? LocalStorage.getItem("marquee")
-      : { text: "Бегущая строка", duration: 10, fontSize: 16 },
-    logo: LocalStorage.getItem("logo")||{image: null, imageUrl:""},
-    news: LocalStorage.getItem("news")||[],
-    slides: LocalStorage.getItem("slides")||[],
+    marquee: LocalStorage.getItem("marquee") || { text: "Бегущая строка", duration: 10, fontSize: 16 },
+    logo: LocalStorage.getItem("logo") || "",
+    news: LocalStorage.getItem("news") || [],
+    slides: LocalStorage.getItem("slides") || [],
+    centerMode: LocalStorage.getItem("centerMode") || "slides",
+    video: LocalStorage.getItem("video") || "",
+    color: LocalStorage.getItem("color") || {back: 'white', text: 'black'},
   }),
 
   getters: {
@@ -29,6 +30,15 @@ export const useSettingsStore = defineStore("settings", {
     },
     setSlides(value){
       LocalStorage.set('slides', value);
+    },
+    setCenterMode(value){
+      LocalStorage.set('centerMode', value);
+    },
+    setVideo(value){
+      LocalStorage.set('video', value);
+    },
+    setColor(value){
+      LocalStorage.set('color', value);
     }
   },
 });

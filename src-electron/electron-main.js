@@ -1,6 +1,7 @@
 import { app, BrowserWindow, nativeTheme, screen, ipcMain } from "electron";
 import path from "path";
 import os from "os";
+import { pathToFileURL } from "url";
 
 // needed in case process is undefined under Linux
 const platform = process.platform || os.platform();
@@ -27,6 +28,7 @@ function createWindow() {
     useContentSize: true,
     webPreferences: {
       contextIsolation: true,
+      webSecurity: false,
       // More info: /quasar-cli/developing-electron-apps/electron-preload-script
       preload: path.resolve(__dirname, process.env.QUASAR_ELECTRON_PRELOAD),
     },
@@ -92,7 +94,7 @@ ipcMain.handle("myAPI:api-play", (event, data) => {
     });
   }
   console.log(process.env.APP_URL);
-  infoWindow.loadURL(process.env.APP_URL + '/#/info');
+  infoWindow.loadURL(process.env.APP_URL + "/#/info");
   return {
     message: "play",
   };
@@ -105,14 +107,37 @@ ipcMain.handle("myAPI:api-stop", () => {
   };
 });
 
-/*ipcMain.handle("myAPI:open-image", () => {
-  const { dialog } = require('electron')
-  let file = dialog.showOpenDialogSync({ properties: ['openFile'] });
-  console.log(file[0])
+ipcMain.handle("myAPI:open-image", () => {
+  const { dialog } = require("electron");
+  let result = dialog.showOpenDialogSync({
+    properties: ["openFile"],
+    filters: [
+      { name: "Images", extensions: ["jpg", "jpeg", "png", "gif"] },
+    ],
+  });
+  let url = "";
+  if(result != undefined)
+    url = pathToFileURL(result[0]);
   return {
-    file: file[0],
-  }
-});*/
+    url: url.href,
+  };
+});
+
+ipcMain.handle("myAPI:open-video", () => {
+  const { dialog } = require("electron");
+  let result = dialog.showOpenDialogSync({
+    properties: ["openFile"],
+    filters: [
+      { name: "Video", extensions: ["mp4", "mkv"] },
+    ],
+  });
+  let url = "";
+  if(result != undefined)
+    url = pathToFileURL(result[0]);
+  return {
+    url: url.href,
+  };
+});
 
 ipcMain.handle("myAPI:get-screens", () => {
   return {
