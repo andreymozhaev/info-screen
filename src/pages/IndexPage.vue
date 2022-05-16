@@ -63,8 +63,8 @@
       <q-tab name="settings" label="Настройки" />
       <q-tab name="marquee" label="Бегущая строка" />
       <q-tab name="news" label="Новости" />
-      <q-tab name="slides" label="Слайды" v-if="centerMode == 'slides'" />
-      <q-tab name="video" label="Видео" v-if="centerMode == 'video'" />
+      <q-tab name="slides" label="Слайды" />
+      <q-tab name="video" label="Видео" />
     </q-tabs>
 
     <q-separator />
@@ -85,34 +85,25 @@
               <q-btn @click="selectLogo()">Изменить</q-btn>
             </q-card-section>
           </q-card>
-          <!--Центральная часть-->
-          <q-card class="my-card">
-            <q-card-section>
-              <div class="text-h6">Центральная часть</div>
-            </q-card-section>
-            <q-card-section>
-              <q-btn-toggle
-                v-model="centerMode"
-                toggle-color="primary"
-                :options="[
-                  { label: 'Слайды', value: 'slides' },
-                  { label: 'Видео', value: 'video' },
-                ]"
-                @update:model-value="setCenterMode()"
-              />
-            </q-card-section>
-          </q-card>
           <!--Цвет-->
           <q-card class="my-card">
             <q-card-section>
               <div class="text-h6">Цвет фона</div>
-              <q-color class="my-picker" v-model="color.back" @update:model-value="setColor()"/>
+              <q-color
+                class="my-picker"
+                v-model="color.back"
+                @update:model-value="setColor()"
+              />
             </q-card-section>
           </q-card>
           <q-card class="my-card">
             <q-card-section>
               <div class="text-h6">Цвет текста</div>
-              <q-color class="my-picker" v-model="color.text" @update:model-value="setColor()"/>
+              <q-color
+                class="my-picker"
+                v-model="color.text"
+                @update:model-value="setColor()"
+              />
             </q-card-section>
           </q-card>
         </div>
@@ -156,7 +147,7 @@
         </q-card>
       </q-tab-panel>
 
-      <q-tab-panel name="slides" v-if="centerMode == 'slides'">
+      <q-tab-panel name="slides">
         <div class="text-h6">Слайды</div>
         <div class="q-pa-md row items-start q-gutter-md">
           <q-card class="my-card" v-for="(item, index) in slides" :key="index">
@@ -186,26 +177,47 @@
         </q-card>
       </q-tab-panel>
 
-      <q-tab-panel name="video" v-if="centerMode == 'video'">
-        <div class="text-h6">Видео</div>
+      <q-tab-panel name="video">
         <q-card>
-          <q-card-section>
-            <q-input label="Ссылка на видео" v-model="video"></q-input>
+          <q-card-section v-for="(item, index) in video" :key="index">
+            <q-input label="Подпись" v-model="item.title"></q-input>
+            <q-input
+              label="Ссылка на видео"
+              v-model="item.source[0].src"
+            ></q-input>
+            <q-input filled v-model="item.time" mask="time" :rules="['time']">
+              <template v-slot:append>
+                <q-icon name="access_time" class="cursor-pointer">
+                  <q-popup-proxy
+                    cover
+                    transition-show="scale"
+                    transition-hide="scale"
+                  >
+                    <q-time v-model="item.time" format24h>
+                      <div class="row items-center justify-end">
+                        <q-btn
+                          v-close-popup
+                          label="Закрыть"
+                          color="primary"
+                          flat
+                        />
+                      </div>
+                    </q-time>
+                  </q-popup-proxy>
+                </q-icon>
+              </template>
+            </q-input>
+            <q-btn @click="loadVideo(index)">Загрузить</q-btn>
+            <q-btn @click="deleteVideo(index)">Удалить</q-btn>
           </q-card-section>
           <q-card-section class="q-gutter-md">
-            <q-btn @click="loadVideo()">Загрузить</q-btn>
+            <q-btn @click="addVideo()">Добавить</q-btn>
             <q-btn @click="saveVideo()">Сохранить</q-btn>
           </q-card-section>
         </q-card>
       </q-tab-panel>
     </q-tab-panels>
   </q-card>
-
-  <!--q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-    <q-list>
-      <q-item-label header> Essential Links </q-item-label>
-    </q-list>
-  </q-drawer-->
 </template>
 
 <script>
@@ -213,7 +225,6 @@ import { defineComponent, onMounted, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { usePlayStore } from "src/stores/play";
 import { useSettingsStore } from "src/stores/settings";
-//import { LocalStorage } from "quasar";
 
 export default defineComponent({
   name: "IndexPage",
@@ -221,7 +232,7 @@ export default defineComponent({
   setup() {
     const playStore = usePlayStore();
     const settingsStore = useSettingsStore();
-    const { marquee, news, slides, logo, centerMode, video, color } =
+    const { marquee, news, slides, logo, video, color } =
       storeToRefs(settingsStore);
     const screens = ref([]);
     const selectedScreen = ref({});
@@ -249,7 +260,6 @@ export default defineComponent({
       slides,
       slide,
       logo,
-      centerMode,
       video,
       color,
 
@@ -306,8 +316,6 @@ export default defineComponent({
 
       async selectLogo() {
         let response = await window.myAPI.openImage();
-        //let urll = url.pathToFileURL(response.file);
-        //console.log(urll);
         console.log(response.url);
         logo.value = response.url;
         settingsStore.setLogo(logo.value);
@@ -318,34 +326,32 @@ export default defineComponent({
         slide.value.url = response.url;
       },
 
-      async loadVideo() {
+      addVideo() {
+        let now = new Date();
+        let time = { hours: now.getHours(), minutes: now.getMinutes() };
+        video.value.push({
+          source: [{ src: "", type: "video/mp4" }],
+          time: time,
+        });
+      },
+
+      deleteVideo(index) {
+        video.value.splice(index, 1);
+      },
+
+      async loadVideo(index) {
         let response = await window.myAPI.openVideo();
-        video.value = response.url;
+        video.value[index].source[0].src = response.url;
       },
 
       saveVideo() {
+        video.value.type = "video/mp4";
         settingsStore.setVideo(video.value);
       },
 
-      setCenterMode() {
-        settingsStore.setCenterMode(centerMode.value);
-      },
-
-      setColor(){
+      setColor() {
         settingsStore.setColor(color.value);
-      }
-
-      /*async openImage() {
-        console.log("load Image");
-        logo.value.imageUrl = URL.createObjectURL(logo.value.image);
-        settingsStore.setLogo(logo.value);
       },
-
-      loadImage() {
-        console.log("load Image");
-        logo.value.imageUrl = URL.createObjectURL(logo.value.image);
-        settingsStore.setLogo(logo.value);
-      },*/
     };
   },
 });
@@ -357,7 +363,7 @@ export default defineComponent({
   max-width: 250px;
 }
 
-.my-picker{
+.my-picker {
   max-width: 250px;
 }
 </style>

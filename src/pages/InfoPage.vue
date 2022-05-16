@@ -1,5 +1,8 @@
 <template>
-  <div class="info fullscreen column" :style="{backgroundColor: color.back, color: color.text}">
+  <div
+    class="info fullscreen column"
+    :style="{ backgroundColor: color.back, color: color.text }"
+  >
     <div class="col marquee column justify-center">
       <p
         :style="{
@@ -19,27 +22,37 @@
           </q-card-section>
         </q-card>
       </div>
-      <div class="col-7 q-pa-md column justify-center">
-        <q-carousel
-          autoplay="true"
-          infinite
-          animated
-          v-model="slide"
-          class="full-height"
-          v-if="centerMode=='slides'"
-        >
-          <q-carousel-slide
-            v-for="(item, index) in slides"
-            :key="index"
-            :name="index"
-            :img-src="item.url"
+      <div class="col-7 q-pa-md column">
+        <div class="col-11 column justify-center">
+          <q-carousel
+            autoplay
+            infinite
+            animated
+            v-model="slide"
+            class="full-height"
+            v-if="!isVideo"
           >
-            <div class="absolute-bottom custom-caption">
-              <div class="text-h2">{{ item.title }}</div>
-            </div>
-          </q-carousel-slide>
-        </q-carousel>
-        <q-video v-if="centerMode=='video'" :src="video" :ratio="16/9"></q-video>
+            <q-carousel-slide
+              v-for="(item, index) in slides"
+              :key="index"
+              :name="index"
+              :img-src="item.url"
+            >
+              <div class="absolute-bottom custom-caption">
+                <div class="text-h2">{{ item.title }}</div>
+              </div>
+            </q-carousel-slide>
+          </q-carousel>
+          <!--q-video v-if="centerMode=='video'" :src="video" :ratio="16/9"></q-video-->
+          <q-media-player
+            v-if="isVideo"
+            type="video"
+            :sources="currentVideo.source"
+            :autoplay="true"
+            @ended="stop()"
+          ></q-media-player>
+        </div>
+        <div class="col-1 text-h6" v-if="isVideo">{{ currentVideo.title }}</div>
       </div>
       <div class="col-2 column q-pa-md">
         <div class="col">
@@ -66,13 +79,13 @@ import { onMounted, ref } from "vue";
 import { useSettingsStore } from "src/stores/settings";
 import { storeToRefs } from "pinia";
 import { defineComponent } from "vue";
-//import { LocalStorage } from "quasar";
 export default defineComponent({
   name: "InfoPage",
 
   setup() {
     const settingsStore = useSettingsStore();
-    const { marquee, news, slides, logo, video, centerMode, color } = storeToRefs(settingsStore);
+    const { marquee, news, slides, logo, video, color } =
+      storeToRefs(settingsStore);
     const slide = ref(0);
     const datetime = ref({});
     const days = [
@@ -84,6 +97,8 @@ export default defineComponent({
       "Пятница",
       "Суббота",
     ];
+    const isVideo = ref(false);
+    const currentVideo = ref({});
 
     const getTime = () => {
       let date = new Date();
@@ -101,6 +116,15 @@ export default defineComponent({
         date.getMinutes() > 9 ? date.getMinutes() : "0" + date.getMinutes();
       datetime.value.seconds =
         date.getSeconds() > 9 ? date.getSeconds() : "0" + date.getSeconds();
+      if (!isVideo.value) {
+        const currentTime = datetime.value.hours + ":" + datetime.value.minutes;
+        video.value.forEach((item) => {
+          if (item.time == currentTime) {
+            currentVideo.value = item;
+            isVideo.value = true;
+          }
+        });
+      }
     };
 
     const updateTime = () => {
@@ -117,11 +141,15 @@ export default defineComponent({
       datetime,
       logo,
       video,
-      centerMode,
       color,
+      isVideo,
+      currentVideo,
 
       getTime,
       updateTime,
+      stop(){
+        isVideo.value = false;
+      }
     };
   },
 });

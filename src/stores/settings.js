@@ -7,8 +7,7 @@ export const useSettingsStore = defineStore("settings", {
     logo: LocalStorage.getItem("logo") || "",
     news: LocalStorage.getItem("news") || [],
     slides: LocalStorage.getItem("slides") || [],
-    centerMode: LocalStorage.getItem("centerMode") || "slides",
-    video: LocalStorage.getItem("video") || "",
+    video: LocalStorage.getItem("video") || [],
     color: LocalStorage.getItem("color") || {back: 'white', text: 'black'},
   }),
 
@@ -30,9 +29,6 @@ export const useSettingsStore = defineStore("settings", {
     },
     setSlides(value){
       LocalStorage.set('slides', value);
-    },
-    setCenterMode(value){
-      LocalStorage.set('centerMode', value);
     },
     setVideo(value){
       LocalStorage.set('video', value);
