@@ -70,10 +70,10 @@ app.on("activate", () => {
 });
 
 ipcMain.handle("myAPI:api-play", (event, data) => {
-  /*const infoPath =
+  const infoPath =
     process.env.NODE_ENV === "development"
-      ? "http://localhost:9080/#/info"
-      : `file://${__dirname}/index.html#info`;*/
+      ? process.env.APP_URL + "/#/info"
+      : `file://${__dirname}/index.html#info`;
   infoWindow = new BrowserWindow({
     x: data.x,
     y: data.y,
@@ -94,7 +94,7 @@ ipcMain.handle("myAPI:api-play", (event, data) => {
     });
   }
   console.log(process.env.APP_URL);
-  infoWindow.loadURL(process.env.APP_URL + "/#/info");
+  infoWindow.loadURL(infoPath);
   return {
     message: "play",
   };
