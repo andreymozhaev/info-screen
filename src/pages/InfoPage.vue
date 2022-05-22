@@ -3,7 +3,7 @@
     class="info fullscreen column"
     :style="{ backgroundColor: color.back, color: color.text }"
   >
-    <div class="col marquee column justify-center">
+    <div class="col-auto marquee column justify-center">
       <p
         :style="{
           animationDuration: marquee.duration + 's',
@@ -13,8 +13,8 @@
         {{ marquee.text }}
       </p>
     </div>
-    <div class="col-11 row q-pa-md">
-      <div class="col-3 q-gutter-md q-pa-md">
+    <div class="col row q-pa-md">
+      <div class="col-3 q-gutter-md q-pa-md" style="overflow:hidden; height: 100%">
         <q-card v-for="(item, index) in news" :key="index">
           <q-card-section>
             <div class="text-h6">{{ item.title }}</div>
@@ -158,6 +158,7 @@ export default defineComponent({
 <style>
 .marquee {
   overflow: hidden;
+  width: 100%;
 }
 
 .marquee p {
